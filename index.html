@@ -41,6 +41,9 @@
       <a href="#" class="nav-item" onclick="showSection('decisoes', this)">
         <span class="nav-icon">&#9878;</span> Decisões do Grêmio
       </a>
+      <a href="#" class="nav-item" onclick="showSection('calendario', this)">
+        <span class="nav-icon">&#128197;</span> Calendário Escolar
+      </a>
       <a href="#" class="nav-item" onclick="showSection('backup', this)">
         <span class="nav-icon">&#128190;</span> Backup de Dados
       </a>
@@ -326,6 +329,23 @@
           <h3 class="panel-title">Decisões Publicadas (<span id="totalDecisoes">0</span>)</h3>
           <div id="listaDecisoes" class="decisions-list">
             <p class="empty-msg">Nenhuma decisão publicada.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================== CALENDÁRIO ESCOLAR ======================== -->
+      <section id="section-calendario" class="section">
+        <div class="section-header">
+          <h1 class="section-title">Calendário Escolar</h1>
+          <p class="section-subtitle">Consulte as datas importantes do ano letivo</p>
+        </div>
+        <div class="list-panel list-wide" style="text-align: center;">
+          <h3 class="panel-title">Calendário Oficial</h3>
+          <div class="calendar-container">
+            <img src="calendario.png" alt="Calendário Escolar" class="calendar-img" id="calendarImg" onerror="this.src='https://via.placeholder.com/800x1200?text=Adicione+a+imagem+calendario.png+na+pasta+do+site'" />
+          </div>
+          <div style="margin-top: 1.5rem;">
+            <p class="section-subtitle">Dica: Para atualizar, substitua o arquivo <b>calendario.png</b> na pasta do seu repositório.</p>
           </div>
         </div>
       </section>

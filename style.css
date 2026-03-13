@@ -1119,3 +1119,30 @@ input[type="number"]::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
+
+/* ============================================================
+   CALENDÁRIO ESCOLAR
+   ============================================================ */
+.calendar-container {
+  max-width: 100%;
+  overflow: hidden;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-gold);
+  background: var(--bg-card);
+  padding: 10px;
+  display: inline-block;
+  box-shadow: var(--shadow-card);
+}
+
+.calendar-img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-sm);
+  display: block;
+}
+
+@media (max-width: 600px) {
+  .calendar-container {
+    padding: 5px;
+  }
+}
