@@ -476,16 +476,7 @@ function adicionarMembro() {
     return;
   }
 
-  if (!fileInput.files || fileInput.files.length === 0) {
-    showToast('Selecione uma foto para o membro.', 'error');
-    return;
-  }
-
-  const file = fileInput.files[0];
-  const reader = new FileReader();
-
-  reader.onload = function(e) {
-    const fotoBase64 = e.target.result;
+  const processarMembro = (fotoBase64 = null) => {
     STATE.membros.push({ id: Date.now(), nome, cargo, foto: fotoBase64 });
     salvar();
     renderMembros();
@@ -498,7 +489,16 @@ function adicionarMembro() {
     showToast('Membro cadastrado com sucesso!', 'success');
   };
 
-  reader.readAsDataURL(file);
+  if (fileInput.files && fileInput.files.length > 0) {
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      processarMembro(e.target.result);
+    };
+    reader.readAsDataURL(file);
+  } else {
+    processarMembro();
+  }
 }
 
 function deletarMembro(id) {
@@ -507,6 +507,158 @@ function deletarMembro(id) {
   renderMembros();
   renderDashboard();
   showToast('Membro removido.', 'warning');
+}
+
+function abrirEdicaoMembro(id) {
+  const membro = STATE.membros.find(m => m.id === id);
+  if (!membro) return;
+
+  const initials = membro.nome.split(' ').map(p => p[0]).join('').substring(0, 2).toUpperCase();
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.id = 'modalEditMembro';
+  modal.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Editar Foto - ${escHtml(membro.nome)}</h2>
+        <button class="modal-close" onclick="fecharModalMembro()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-section">
+          <h3>Foto Atual</h3>
+          <div class="modal-avatar-preview">
+            ${membro.foto 
+              ? `<img src="${membro.foto}" alt="${escHtml(membro.nome)}" class="modal-avatar-img" />`
+              : `<span class="modal-avatar-text">${escHtml(initials)}</span>`
+            }
+          </div>
+        </div>
+        <div class="modal-section">
+          <h3>Alterar Foto</h3>
+          <input type="file" id="modalFotoInput" class="form-input" accept="image/*" />
+          <div class="modal-buttons">
+            <button class="btn btn-primary" onclick="salvarFotoMembro(${id})">Salvar Nova Foto</button>
+            ${membro.foto ? `<button class="btn btn-danger" onclick="removerFotoMembro(${id})">Remover Foto</button>` : ''}
+            <button class="btn btn-secondary" onclick="fecharModalMembro()">Cancelar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  modal.style.display = 'flex';
+}
+
+function fecharModalMembro() {
+  const modal = document.getElementById('modalEditMembro');
+  if (modal) modal.remove();
+}
+
+function salvarFotoMembro(id) {
+  const fileInput = document.getElementById('modalFotoInput');
+  if (!fileInput.files || fileInput.files.length === 0) {
+    showToast('Selecione uma foto.', 'error');
+    return;
+  }
+
+  const file = fileInput.files[0];
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    abrirCropperMembro(e.target.result, id);
+  };
+  reader.readAsDataURL(file);
+}
+
+function removerFotoMembro(id) {
+  const membro = STATE.membros.find(m => m.id === id);
+  if (membro) {
+    membro.foto = null;
+    salvar();
+    renderMembros();
+    renderDashboard();
+    fecharModalMembro();
+    showToast('Foto removida com sucesso!', 'success');
+  }
+}
+
+function abrirCropperMembro(imagemBase64, membroId) {
+  fecharModalMembro();
+  
+  const cropModal = document.createElement('div');
+  cropModal.className = 'modal-overlay';
+  cropModal.id = 'cropperModal';
+  cropModal.style.display = 'flex';
+  cropModal.innerHTML = `
+    <div class="cropper-container">
+      <div class="cropper-header">
+        <h2>Cortar Foto do Membro</h2>
+        <button class="modal-close" onclick="fecharCropper()">&times;</button>
+      </div>
+      <div class="cropper-body">
+        <img id="cropperImage" src="${imagemBase64}" alt="Foto para cortar" />
+      </div>
+      <div class="cropper-footer">
+        <button class="btn btn-secondary" onclick="fecharCropper()">Cancelar</button>
+        <button class="btn btn-primary" onclick="confirmarCrop(${membroId})">Confirmar Corte</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(cropModal);
+  
+  setTimeout(() => {
+    const img = document.getElementById('cropperImage');
+    window.cropperInstance = new Cropper(img, {
+      aspectRatio: 1,
+      viewMode: 1,
+      autoCropArea: 0.8,
+      responsive: true,
+      restore: true,
+      guides: true,
+      center: true,
+      highlight: true,
+      cropBoxMovable: true,
+      cropBoxResizable: true,
+      toggleDragModeOnDblclick: true,
+      background: true,
+      modal: true
+    });
+  }, 100);
+}
+
+function fecharCropper() {
+  if (window.cropperInstance) {
+    window.cropperInstance.destroy();
+    window.cropperInstance = null;
+  }
+  const modal = document.getElementById('cropperModal');
+  if (modal) modal.remove();
+}
+
+function confirmarCrop(membroId) {
+  if (!window.cropperInstance) {
+    showToast('Erro ao processar imagem.', 'error');
+    return;
+  }
+
+  const canvas = window.cropperInstance.getCroppedCanvas({
+    maxWidth: 400,
+    maxHeight: 400,
+    fillColor: '#fff',
+    imageSmoothingEnabled: true,
+    imageSmoothingQuality: 'high'
+  });
+
+  const fotoBase64 = canvas.toDataURL('image/jpeg', 0.9);
+  const membro = STATE.membros.find(m => m.id === membroId);
+  
+  if (membro) {
+    membro.foto = fotoBase64;
+    salvar();
+    renderMembros();
+    renderDashboard();
+    fecharCropper();
+    showToast('Foto salva com sucesso!', 'success');
+  }
 }
 
 function renderMembros() {
@@ -527,6 +679,7 @@ function renderMembros() {
     return `
       <div class="member-card">
         <button class="btn-delete member-delete" onclick="deletarMembro(${m.id})">&#10005;</button>
+        <button class="btn-edit member-edit" onclick="abrirEdicaoMembro(${m.id})" title="Editar foto">&#9998;</button>
         <div class="member-avatar">${avatarContent}</div>
         <div class="member-name">${escHtml(m.nome)}</div>
         <div class="member-role">${escHtml(m.cargo)}</div>
