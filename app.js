@@ -14,7 +14,8 @@ const STATE = {
   membros:   [],
   eventos:   [],
   sugestoes: [],
-  decisoes:  []
+  decisoes:  [],
+  galeria:   []
 };
 
 // ============================================================
@@ -69,17 +70,18 @@ function showSection(id, el) {
     agenda: 'Agenda do Grêmio',
     sugestoes: 'Sugestões',
     decisoes: 'Decisões do Grêmio',
+    galeria: 'Galeria de Ações',
     backup: 'Backup de Dados'
   };
   document.getElementById('topbarTitle').textContent = titles[id] || 'Painel';
-
-  // Atualiza seção específica ao abrir
+  // Atualiza seção específ ica ao abrir
   if (id === 'dashboard')  renderDashboard();
   if (id === 'financeiro') { renderFinanceiro(); renderChart(); }
   if (id === 'membros')    renderMembros();
   if (id === 'agenda')     renderEventos();
   if (id === 'sugestoes')  renderSugestoes();
   if (id === 'decisoes')   renderDecisoes();
+  if (id === 'galeria')    renderGaleria();
   if (id === 'backup')     renderBackupResumo();
 
   closeSidebar();
@@ -717,6 +719,7 @@ function importarBackup(event) {
       if (imported.eventos   !== undefined) STATE.eventos   = imported.eventos;
       if (imported.sugestoes !== undefined) STATE.sugestoes = imported.sugestoes;
       if (imported.decisoes  !== undefined) STATE.decisoes  = imported.decisoes;
+      if (imported.galeria   !== undefined) STATE.galeria   = imported.galeria;
 
       salvar();
       renderDashboard();
@@ -746,6 +749,81 @@ function limparDados() {
     finChartInstance = null;
   }
   showToast('Todos os dados foram apagados.', 'warning');
+}
+
+// ============================================================
+// GALERIA DE ACOES
+// ============================================================
+function adicionarFotoGaleria() {
+  const fileInput = document.getElementById('galeriaFoto');
+  const evento    = document.getElementById('galeriaEvento').value.trim();
+  const data      = document.getElementById('galeriaData').value;
+
+  if (!fileInput.files || fileInput.files.length === 0) {
+    showToast('Selecione uma foto.', 'error');
+    return;
+  }
+  if (!evento) {
+    showToast('Digite o nome do evento.', 'error');
+    return;
+  }
+  if (!data) {
+    showToast('Selecione a data do evento.', 'error');
+    return;
+  }
+
+  const file = fileInput.files[0];
+  const reader = new FileReader();
+
+  reader.onload = function(e) {
+    const base64 = e.target.result;
+    STATE.galeria.push({
+      id: Date.now(),
+      foto: base64,
+      evento: evento,
+      data: data
+    });
+    salvar();
+    renderGaleria();
+
+    fileInput.value = '';
+    document.getElementById('galeriaEvento').value = '';
+    document.getElementById('galeriaData').value = today();
+
+    showToast('Foto adicionada com sucesso!', 'success');
+  };
+
+  reader.readAsDataURL(file);
+}
+
+function deletarFotoGaleria(id) {
+  STATE.galeria = STATE.galeria.filter(f => f.id !== id);
+  salvar();
+  renderGaleria();
+  showToast('Foto removida.', 'warning');
+}
+
+function renderGaleria() {
+  const grid = document.getElementById('galeriaGrid');
+  const total = document.getElementById('totalFotos');
+  total.textContent = STATE.galeria.length;
+
+  if (STATE.galeria.length === 0) {
+    grid.innerHTML = '<p class="empty-msg">Nenhuma foto cadastrada.</p>';
+    return;
+  }
+
+  grid.innerHTML = [...STATE.galeria].reverse().map(f => `
+    <div class="galeria-card">
+      <button class="galeria-delete" onclick="deletarFotoGaleria(${f.id})">&#10005;</button>
+      <div class="galeria-img-container">
+        <img src="${f.foto}" alt="${escHtml(f.evento)}" class="galeria-img" />
+      </div>
+      <div class="galeria-info">
+        <div class="galeria-evento">${escHtml(f.evento)}</div>
+        <div class="galeria-data">${formatDate(f.data)}</div>
+      </div>
+    </div>`).join('');
 }
 
 function renderBackupResumo() {
@@ -805,7 +883,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Define datas padrão nos campos de data
   const hoje = today();
-  ['entradaData', 'gastoData', 'eventoData'].forEach(id => {
+  ['entradaData', 'gastoData', 'eventoData', 'galeriaData'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = hoje;
   });
