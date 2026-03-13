@@ -467,6 +467,7 @@ function renderChart() {
 // MEMBROS
 // ============================================================
 function adicionarMembro() {
+  const fileInput = document.getElementById('membroFoto');
   const nome  = document.getElementById('membroNome').value.trim();
   const cargo = document.getElementById('membroCargo').value.trim();
 
@@ -475,15 +476,29 @@ function adicionarMembro() {
     return;
   }
 
-  STATE.membros.push({ id: Date.now(), nome, cargo });
-  salvar();
-  renderMembros();
-  renderDashboard();
+  if (!fileInput.files || fileInput.files.length === 0) {
+    showToast('Selecione uma foto para o membro.', 'error');
+    return;
+  }
 
-  document.getElementById('membroNome').value  = '';
-  document.getElementById('membroCargo').value = '';
+  const file = fileInput.files[0];
+  const reader = new FileReader();
 
-  showToast('Membro cadastrado com sucesso!', 'success');
+  reader.onload = function(e) {
+    const fotoBase64 = e.target.result;
+    STATE.membros.push({ id: Date.now(), nome, cargo, foto: fotoBase64 });
+    salvar();
+    renderMembros();
+    renderDashboard();
+
+    fileInput.value = '';
+    document.getElementById('membroNome').value  = '';
+    document.getElementById('membroCargo').value = '';
+
+    showToast('Membro cadastrado com sucesso!', 'success');
+  };
+
+  reader.readAsDataURL(file);
 }
 
 function deletarMembro(id) {
@@ -506,10 +521,13 @@ function renderMembros() {
 
   lista.innerHTML = STATE.membros.map(m => {
     const initials = m.nome.split(' ').map(p => p[0]).join('').substring(0, 2).toUpperCase();
+    const avatarContent = m.foto 
+      ? `<img src="${m.foto}" alt="${escHtml(m.nome)}" class="member-avatar-img" />`
+      : `<span class="member-avatar-text">${escHtml(initials)}</span>`;
     return `
       <div class="member-card">
         <button class="btn-delete member-delete" onclick="deletarMembro(${m.id})">&#10005;</button>
-        <div class="member-avatar">${escHtml(initials)}</div>
+        <div class="member-avatar">${avatarContent}</div>
         <div class="member-name">${escHtml(m.nome)}</div>
         <div class="member-role">${escHtml(m.cargo)}</div>
       </div>`;
@@ -684,74 +702,6 @@ function renderDecisoes() {
 }
 
 // ============================================================
-// BACKUP
-// ============================================================
-function exportarBackup() {
-  const data = {
-    versao: '1.0',
-    exportadoEm: nowDatetime(),
-    gremiofenix: STATE
-  };
-  const json = JSON.stringify(data, null, 2);
-  const blob = new Blob([json], { type: 'application/json' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href     = url;
-  a.download = `gremio_fenix_backup_${today()}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast('Backup exportado com sucesso!', 'success');
-}
-
-function importarBackup(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    try {
-      const data = JSON.parse(e.target.result);
-      const imported = data.gremiofenix || data;
-
-      if (imported.entradas  !== undefined) STATE.entradas  = imported.entradas;
-      if (imported.gastos    !== undefined) STATE.gastos    = imported.gastos;
-      if (imported.membros   !== undefined) STATE.membros   = imported.membros;
-      if (imported.eventos   !== undefined) STATE.eventos   = imported.eventos;
-      if (imported.sugestoes !== undefined) STATE.sugestoes = imported.sugestoes;
-      if (imported.decisoes  !== undefined) STATE.decisoes  = imported.decisoes;
-      if (imported.galeria   !== undefined) STATE.galeria   = imported.galeria;
-
-      salvar();
-      renderDashboard();
-      renderBackupResumo();
-      showToast('Backup importado com sucesso!', 'success');
-    } catch (err) {
-      showToast('Erro ao importar: arquivo inválido.', 'error');
-    }
-  };
-  reader.readAsText(file);
-  event.target.value = '';
-}
-
-function limparDados() {
-  if (!confirm('Tem certeza que deseja apagar TODOS os dados? Esta ação não pode ser desfeita.')) return;
-  STATE.entradas  = [];
-  STATE.gastos    = [];
-  STATE.membros   = [];
-  STATE.eventos   = [];
-  STATE.sugestoes = [];
-  STATE.decisoes  = [];
-  salvar();
-  renderDashboard();
-  renderBackupResumo();
-  if (finChartInstance) {
-    finChartInstance.destroy();
-    finChartInstance = null;
-  }
-  showToast('Todos os dados foram apagados.', 'warning');
-}
-
-// ============================================================
 // GALERIA DE ACOES
 // ============================================================
 function adicionarFotoGaleria() {
@@ -826,6 +776,75 @@ function renderGaleria() {
     </div>`).join('');
 }
 
+// ============================================================
+// BACKUP
+// ============================================================
+function exportarBackup() {
+  const data = {
+    versao: '1.0',
+    exportadoEm: nowDatetime(),
+    gremiofenix: STATE
+  };
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `gremio_fenix_backup_${today()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Backup exportado com sucesso!', 'success');
+}
+
+function importarBackup(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      const imported = data.gremiofenix || data;
+
+      if (imported.entradas  !== undefined) STATE.entradas  = imported.entradas;
+      if (imported.gastos    !== undefined) STATE.gastos    = imported.gastos;
+      if (imported.membros   !== undefined) STATE.membros   = imported.membros;
+      if (imported.eventos   !== undefined) STATE.eventos   = imported.eventos;
+      if (imported.sugestoes !== undefined) STATE.sugestoes = imported.sugestoes;
+      if (imported.decisoes  !== undefined) STATE.decisoes  = imported.decisoes;
+      if (imported.galeria   !== undefined) STATE.galeria   = imported.galeria;
+
+      salvar();
+      renderDashboard();
+      renderBackupResumo();
+      showToast('Backup importado com sucesso!', 'success');
+    } catch (err) {
+      showToast('Erro ao importar: arquivo inválido.', 'error');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function limparDados() {
+  if (!confirm('Tem certeza que deseja apagar TODOS os dados? Esta ação não pode ser desfeita.')) return;
+  STATE.entradas  = [];
+  STATE.gastos    = [];
+  STATE.membros   = [];
+  STATE.eventos   = [];
+  STATE.sugestoes = [];
+  STATE.decisoes  = [];
+  STATE.galeria   = [];
+  salvar();
+  renderDashboard();
+  renderBackupResumo();
+  if (finChartInstance) {
+    finChartInstance.destroy();
+    finChartInstance = null;
+  }
+  showToast('Todos os dados foram apagados.', 'warning');
+}
+
 function renderBackupResumo() {
   const resumo = document.getElementById('backupResumo');
   const saldo  = calcSaldo();
@@ -836,6 +855,7 @@ function renderBackupResumo() {
     { label: 'Eventos',       value: STATE.eventos.length   },
     { label: 'Sugestões',     value: STATE.sugestoes.length },
     { label: 'Decisões',      value: STATE.decisoes.length  },
+    { label: 'Fotos Galeria', value: STATE.galeria.length   },
     { label: 'Saldo Atual',   value: formatBRL(saldo)       }
   ];
   resumo.innerHTML = items.map(i => `
