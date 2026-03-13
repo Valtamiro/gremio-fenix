@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="googlebot" content="noindex, nofollow" />
+  <title>Grêmio Fênix — Painel Administrativo</title>
+  <link rel="icon" type="image/png" href="fenix_logo.png" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- OVERLAY MOBILE -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <img src="fenix_logo.png" alt="Logo Grêmio Fênix" class="sidebar-logo" />
+      <span class="sidebar-title">Grêmio Fênix</span>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-item active" onclick="showSection('dashboard', this)">
+        <span class="nav-icon">&#9783;</span> Dashboard
+      </a>
+      <a href="#" class="nav-item" onclick="showSection('financeiro', this)">
+        <span class="nav-icon">&#9776;</span> Financeiro
+      </a>
+      <a href="#" class="nav-item" onclick="showSection('membros', this)">
+        <span class="nav-icon">&#9786;</span> Membros do Grêmio
+      </a>
+      <a href="#" class="nav-item" onclick="showSection('agenda', this)">
+        <span class="nav-icon">&#128197;</span> Agenda do Grêmio
+      </a>
+      <a href="#" class="nav-item" onclick="showSection('sugestoes', this)">
+        <span class="nav-icon">&#128172;</span> Sugestões
+      </a>
+      <a href="#" class="nav-item" onclick="showSection('decisoes', this)">
+        <span class="nav-icon">&#9878;</span> Decisões do Grêmio
+      </a>
+      <a href="#" class="nav-item" onclick="showSection('backup', this)">
+        <span class="nav-icon">&#128190;</span> Backup de Dados
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <span>Painel Interno &mdash; Acesso Restrito</span>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <div class="main-wrapper">
+
+    <!-- TOP BAR -->
+    <header class="topbar">
+      <button class="menu-toggle" onclick="toggleSidebar()">&#9776;</button>
+      <div class="topbar-title" id="topbarTitle">Dashboard</div>
+      <div class="topbar-info">
+        <span id="topbarDate"></span>
+      </div>
+    </header>
+
+    <!-- WATERMARK -->
+    <div class="watermark-bg">
+      <img src="fenix_watermark.png" alt="" class="watermark-img" />
+    </div>
+
+    <!-- CONTENT AREA -->
+    <main class="content-area">
+
+      <!-- ======================== DASHBOARD ======================== -->
+      <section id="section-dashboard" class="section active">
+        <div class="section-header">
+          <h1 class="section-title">Dashboard</h1>
+          <p class="section-subtitle">Visão geral do Grêmio Fênix</p>
+        </div>
+        <div class="cards-grid">
+          <div class="card card-gold">
+            <div class="card-icon">&#128176;</div>
+            <div class="card-info">
+              <span class="card-label">Saldo Atual</span>
+              <span class="card-value" id="dashSaldo">R$ 0,00</span>
+            </div>
+          </div>
+          <div class="card card-orange">
+            <div class="card-icon">&#128202;</div>
+            <div class="card-info">
+              <span class="card-label">Movimentações</span>
+              <span class="card-value" id="dashMovimentacoes">0</span>
+            </div>
+          </div>
+          <div class="card card-red">
+            <div class="card-icon">&#128100;</div>
+            <div class="card-info">
+              <span class="card-label">Membros Cadastrados</span>
+              <span class="card-value" id="dashMembros">0</span>
+            </div>
+          </div>
+          <div class="card card-fire">
+            <div class="card-icon">&#128197;</div>
+            <div class="card-info">
+              <span class="card-label">Próximos Eventos</span>
+              <span class="card-value" id="dashEventos">0</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="dashboard-bottom">
+          <div class="dash-panel">
+            <h3 class="panel-title">Últimas Movimentações</h3>
+            <div id="dashUltimasMovimentacoes" class="mini-list">
+              <p class="empty-msg">Nenhuma movimentação registrada.</p>
+            </div>
+          </div>
+          <div class="dash-panel">
+            <h3 class="panel-title">Próximos Eventos</h3>
+            <div id="dashProximosEventos" class="mini-list">
+              <p class="empty-msg">Nenhum evento cadastrado.</p>
+            </div>
+          </div>
+          <div class="dash-panel">
+            <h3 class="panel-title">Últimas Decisões</h3>
+            <div id="dashUltimasDecisoes" class="mini-list">
+              <p class="empty-msg">Nenhuma decisão publicada.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================== FINANCEIRO ======================== -->
+      <section id="section-financeiro" class="section">
+        <div class="section-header">
+          <h1 class="section-title">Financeiro</h1>
+          <p class="section-subtitle">Controle de caixa, entradas e gastos</p>
+        </div>
+
+        <div class="fin-summary">
+          <div class="fin-card fin-saldo">
+            <span class="fin-label">Caixa Atual</span>
+            <span class="fin-value" id="finSaldo">R$ 0,00</span>
+          </div>
+          <div class="fin-card fin-entrada">
+            <span class="fin-label">Total Entradas</span>
+            <span class="fin-value" id="finTotalEntradas">R$ 0,00</span>
+          </div>
+          <div class="fin-card fin-gasto">
+            <span class="fin-label">Total Gastos</span>
+            <span class="fin-value" id="finTotalGastos">R$ 0,00</span>
+          </div>
+        </div>
+
+        <div class="fin-forms">
+          <div class="form-panel">
+            <h3 class="panel-title panel-entrada">&#8679; Registrar Entrada</h3>
+            <div class="form-group">
+              <label>Data</label>
+              <input type="date" id="entradaData" class="form-input" />
+            </div>
+            <div class="form-group">
+              <label>Valor (R$)</label>
+              <input type="number" id="entradaValor" class="form-input" placeholder="0,00" min="0" step="0.01" />
+            </div>
+            <div class="form-group">
+              <label>Descrição</label>
+              <input type="text" id="entradaDesc" class="form-input" placeholder="Descreva a entrada..." />
+            </div>
+            <button class="btn btn-entrada" onclick="adicionarEntrada()">Adicionar Entrada</button>
+          </div>
+
+          <div class="form-panel">
+            <h3 class="panel-title panel-gasto">&#8681; Registrar Gasto</h3>
+            <div class="form-group">
+              <label>Data</label>
+              <input type="date" id="gastoData" class="form-input" />
+            </div>
+            <div class="form-group">
+              <label>Valor (R$)</label>
+              <input type="number" id="gastoValor" class="form-input" placeholder="0,00" min="0" step="0.01" />
+            </div>
+            <div class="form-group">
+              <label>Descrição</label>
+              <input type="text" id="gastoDesc" class="form-input" placeholder="Descreva o gasto..." />
+            </div>
+            <button class="btn btn-gasto" onclick="adicionarGasto()">Adicionar Gasto</button>
+          </div>
+        </div>
+
+        <div class="chart-panel">
+          <h3 class="panel-title">Gráfico Financeiro</h3>
+          <div class="chart-container">
+            <canvas id="finChart"></canvas>
+          </div>
+        </div>
+
+        <div class="fin-lists">
+          <div class="list-panel">
+            <h3 class="panel-title panel-entrada">Entradas</h3>
+            <div id="listaEntradas" class="transaction-list">
+              <p class="empty-msg">Nenhuma entrada registrada.</p>
+            </div>
+          </div>
+          <div class="list-panel">
+            <h3 class="panel-title panel-gasto">Gastos</h3>
+            <div id="listaGastos" class="transaction-list">
+              <p class="empty-msg">Nenhum gasto registrado.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================== MEMBROS ======================== -->
+      <section id="section-membros" class="section">
+        <div class="section-header">
+          <h1 class="section-title">Membros do Grêmio</h1>
+          <p class="section-subtitle">Cadastro e listagem de integrantes</p>
+        </div>
+
+        <div class="form-panel form-wide">
+          <h3 class="panel-title">Cadastrar Novo Membro</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Nome Completo</label>
+              <input type="text" id="membroNome" class="form-input" placeholder="Nome do membro..." />
+            </div>
+            <div class="form-group">
+              <label>Cargo</label>
+              <input type="text" id="membroCargo" class="form-input" placeholder="Ex: Presidente, Tesoureiro..." />
+            </div>
+            <button class="btn btn-primary form-btn" onclick="adicionarMembro()">Cadastrar</button>
+          </div>
+        </div>
+
+        <div class="list-panel list-wide">
+          <h3 class="panel-title">Membros Cadastrados (<span id="totalMembros">0</span>)</h3>
+          <div id="listaMembros" class="members-grid">
+            <p class="empty-msg">Nenhum membro cadastrado.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================== AGENDA ======================== -->
+      <section id="section-agenda" class="section">
+        <div class="section-header">
+          <h1 class="section-title">Agenda do Grêmio</h1>
+          <p class="section-subtitle">Registro e acompanhamento de eventos</p>
+        </div>
+
+        <div class="form-panel form-wide">
+          <h3 class="panel-title">Adicionar Evento</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Data do Evento</label>
+              <input type="date" id="eventoData" class="form-input" />
+            </div>
+            <div class="form-group">
+              <label>Nome do Evento</label>
+              <input type="text" id="eventoNome" class="form-input" placeholder="Nome do evento..." />
+            </div>
+            <div class="form-group">
+              <label>Local (opcional)</label>
+              <input type="text" id="eventoLocal" class="form-input" placeholder="Local do evento..." />
+            </div>
+            <button class="btn btn-primary form-btn" onclick="adicionarEvento()">Adicionar</button>
+          </div>
+        </div>
+
+        <div class="list-panel list-wide">
+          <h3 class="panel-title">Eventos Cadastrados</h3>
+          <div id="listaEventos" class="events-list">
+            <p class="empty-msg">Nenhum evento cadastrado.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================== SUGESTÕES ======================== -->
+      <section id="section-sugestoes" class="section">
+        <div class="section-header">
+          <h1 class="section-title">Sugestões</h1>
+          <p class="section-subtitle">Canal de sugestões dos estudantes</p>
+        </div>
+
+        <div class="form-panel form-wide">
+          <h3 class="panel-title">Enviar Sugestão</h3>
+          <div class="form-group">
+            <label>Seu Nome (opcional)</label>
+            <input type="text" id="sugestaoNome" class="form-input" placeholder="Anônimo..." />
+          </div>
+          <div class="form-group">
+            <label>Sugestão</label>
+            <textarea id="sugestaoTexto" class="form-textarea" placeholder="Escreva sua sugestão aqui..."></textarea>
+          </div>
+          <button class="btn btn-primary" onclick="enviarSugestao()">Enviar Sugestão</button>
+        </div>
+
+        <div class="list-panel list-wide">
+          <h3 class="panel-title">Sugestões Recebidas (<span id="totalSugestoes">0</span>)</h3>
+          <div id="listaSugestoes" class="suggestions-list">
+            <p class="empty-msg">Nenhuma sugestão recebida.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================== DECISÕES ======================== -->
+      <section id="section-decisoes" class="section">
+        <div class="section-header">
+          <h1 class="section-title">Decisões do Grêmio</h1>
+          <p class="section-subtitle">Publicação oficial de decisões e deliberações</p>
+        </div>
+
+        <div class="form-panel form-wide">
+          <h3 class="panel-title">Publicar Nova Decisão</h3>
+          <div class="form-group">
+            <label>Título da Decisão</label>
+            <input type="text" id="decisaoTitulo" class="form-input" placeholder="Título da decisão..." />
+          </div>
+          <div class="form-group">
+            <label>Texto da Decisão</label>
+            <textarea id="decisaoTexto" class="form-textarea" placeholder="Descreva a decisão tomada..."></textarea>
+          </div>
+          <button class="btn btn-primary" onclick="publicarDecisao()">Publicar Decisão</button>
+        </div>
+
+        <div class="list-panel list-wide">
+          <h3 class="panel-title">Decisões Publicadas (<span id="totalDecisoes">0</span>)</h3>
+          <div id="listaDecisoes" class="decisions-list">
+            <p class="empty-msg">Nenhuma decisão publicada.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================== BACKUP ======================== -->
+      <section id="section-backup" class="section">
+        <div class="section-header">
+          <h1 class="section-title">Backup de Dados</h1>
+          <p class="section-subtitle">Exportação e importação de dados do sistema</p>
+        </div>
+
+        <div class="backup-grid">
+          <div class="backup-card">
+            <div class="backup-icon">&#128229;</div>
+            <h3>Exportar Dados</h3>
+            <p>Faça o download de todos os dados do Grêmio Fênix em formato JSON.</p>
+            <button class="btn btn-primary" onclick="exportarBackup()">Exportar JSON</button>
+          </div>
+          <div class="backup-card">
+            <div class="backup-icon">&#128228;</div>
+            <h3>Importar Dados</h3>
+            <p>Restaure um backup anterior importando um arquivo JSON.</p>
+            <input type="file" id="importFile" accept=".json" style="display:none" onchange="importarBackup(event)" />
+            <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">Importar JSON</button>
+          </div>
+          <div class="backup-card">
+            <div class="backup-icon">&#128465;</div>
+            <h3>Limpar Dados</h3>
+            <p>Apague todos os dados armazenados. Esta ação não pode ser desfeita.</p>
+            <button class="btn btn-danger" onclick="limparDados()">Limpar Tudo</button>
+          </div>
+        </div>
+
+        <div class="list-panel list-wide" style="margin-top: 2rem;">
+          <h3 class="panel-title">Resumo dos Dados Armazenados</h3>
+          <div id="backupResumo" class="backup-summary">
+            <!-- preenchido via JS -->
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast" class="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
