@@ -6,6 +6,33 @@
 'use strict';
 
 // ============================================================
+// FIREBASE CONFIGURATION
+// ============================================================
+const firebaseConfig = {
+  apiKey: "AIzaSyAuzOdvYuIY2YyzL37wq8ni2xOU89BbwDQ",
+  authDomain: "gremio-fenix-125fb.firebaseapp.com",
+  projectId: "gremio-fenix-125fb",
+  storageBucket: "gremio-fenix-125fb.firebasestorage.app",
+  messagingSenderId: "997460611619",
+  appId: "1:997460611619:web:b11489e15b2126bcc11796",
+  measurementId: "G-9T8S0FL8PY"
+};
+
+let db = null;
+let firebaseReady = false;
+
+// Inicializar Firebase
+try {
+  const app = firebase.initializeApp(firebaseConfig);
+  db = firebase.firestore(app);
+  firebaseReady = true;
+  console.log('Firebase inicializado com sucesso');
+} catch (err) {
+  console.error('Erro ao inicializar Firebase:', err);
+  firebaseReady = false;
+}
+
+// ============================================================
 // ESTADO GLOBAL
 // ============================================================
 const STATE = {
@@ -19,13 +46,31 @@ const STATE = {
 };
 
 // ============================================================
-// PERSISTÊNCIA (LocalStorage)
+// PERSISTÊNCIA (LocalStorage + Firebase)
 // ============================================================
-function salvar() {
+async function salvar() {
   localStorage.setItem('gremio_fenix_data', JSON.stringify(STATE));
+  if (firebaseReady && db) {
+    try {
+      await db.collection('gremio').doc('dados').set(STATE, { merge: true });
+    } catch (err) {
+      console.error('Erro ao salvar no Firebase:', err);
+    }
+  }
 }
 
-function carregar() {
+async function carregar() {
+  if (firebaseReady && db) {
+    try {
+      const doc = await db.collection('gremio').doc('dados').get();
+      if (doc.exists) {
+        Object.assign(STATE, doc.data());
+        return;
+      }
+    } catch (err) {
+      console.error('Erro ao carregar do Firebase:', err);
+    }
+  }
   const raw = localStorage.getItem('gremio_fenix_data');
   if (raw) {
     try {
@@ -34,6 +79,30 @@ function carregar() {
     } catch (e) {
       console.error('Erro ao carregar dados:', e);
     }
+  }
+}
+
+function sincronizarEmTempoReal() {
+  if (!firebaseReady || !db) return;
+  try {
+    db.collection('gremio').doc('dados').onSnapshot(doc => {
+      if (doc.exists) {
+        Object.assign(STATE, doc.data());
+        const activeSection = document.querySelector('.section.active');
+        if (activeSection) {
+          const sectionId = activeSection.id.replace('section-', '');
+          if (sectionId === 'dashboard') renderDashboard();
+          if (sectionId === 'financeiro') { renderFinanceiro(); renderChart(); }
+          if (sectionId === 'membros') renderMembros();
+          if (sectionId === 'agenda') renderEventos();
+          if (sectionId === 'sugestoes') renderSugestoes();
+          if (sectionId === 'decisoes') renderDecisoes();
+          if (sectionId === 'galeria') renderGaleria();
+        }
+      }
+    });
+  } catch (err) {
+    console.error('Erro ao sincronizar:', err);
   }
 }
 
@@ -493,7 +562,7 @@ function adicionarMembro() {
     const file = fileInput.files[0];
     const reader = new FileReader();
     reader.onload = function(e) {
-      processarMembro(e.target.result);
+      abrirCropperParaCadastro(e.target.result, processarMembro);
     };
     reader.readAsDataURL(file);
   } else {
@@ -579,6 +648,68 @@ function removerFotoMembro(id) {
     fecharModalMembro();
     showToast('Foto removida com sucesso!', 'success');
   }
+}
+
+function abrirCropperParaCadastro(imagemBase64, callback) {
+  const cropModal = document.createElement('div');
+  cropModal.className = 'modal-overlay';
+  cropModal.id = 'cropperModal';
+  cropModal.style.display = 'flex';
+  cropModal.innerHTML = `
+    <div class="cropper-container">
+      <div class="cropper-header">
+        <h2>Cortar Foto do Membro</h2>
+        <button class="modal-close" onclick="fecharCropper()">&times;</button>
+      </div>
+      <div class="cropper-body">
+        <img id="cropperImage" src="${imagemBase64}" alt="Foto para cortar" />
+      </div>
+      <div class="cropper-footer">
+        <button class="btn btn-secondary" onclick="fecharCropper()">Cancelar</button>
+        <button class="btn btn-primary" onclick="confirmarCropCadastro()">Confirmar Corte</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(cropModal);
+  
+  setTimeout(() => {
+    const img = document.getElementById('cropperImage');
+    window.cropperInstance = new Cropper(img, {
+      aspectRatio: 1,
+      viewMode: 1,
+      autoCropArea: 0.8,
+      responsive: true,
+      restore: true,
+      guides: true,
+      center: true,
+      highlight: true,
+      cropBoxMovable: true,
+      cropBoxResizable: true,
+      toggleDragModeOnDblclick: true,
+      background: true,
+      modal: true
+    });
+    window.cropperCallback = callback;
+  }, 100);
+}
+
+function confirmarCropCadastro() {
+  if (!window.cropperInstance || !window.cropperCallback) {
+    showToast('Erro ao processar imagem.', 'error');
+    return;
+  }
+
+  const canvas = window.cropperInstance.getCroppedCanvas({
+    maxWidth: 400,
+    maxHeight: 400,
+    fillColor: '#fff',
+    imageSmoothingEnabled: true,
+    imageSmoothingQuality: 'high'
+  });
+
+  const fotoBase64 = canvas.toDataURL('image/jpeg', 0.9);
+  window.cropperCallback(fotoBase64);
+  fecharCropper();
 }
 
 function abrirCropperMembro(imagemBase64, membroId) {
@@ -1048,11 +1179,14 @@ function atualizarData() {
 // ============================================================
 // INICIALIZAÇÃO
 // ============================================================
-document.addEventListener('DOMContentLoaded', () => {
-  carregar();
+document.addEventListener('DOMContentLoaded', async () => {
+  await carregar();
   renderDashboard();
   atualizarData();
   setInterval(atualizarData, 30000);
+
+  // Ativa sincronização em tempo real do Firebase
+  sincronizarEmTempoReal();
 
   // Define datas padrão nos campos de data
   const hoje = today();
